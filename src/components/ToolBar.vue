@@ -22,10 +22,10 @@
                 <option v-for="item in encode_options">{{item}}</option>
             </select>
             <br>
-            color:
+            <!-- color:
             <select class="rect-color" @change="setRectColor">
                 <option v-for="item in encode_options">{{item}}</option>
-            </select>
+            </select> -->
         </div>
 
         <div class="line" v-show="encode_fold">
@@ -50,10 +50,10 @@
                 <option v-for="item in encode_options">{{item}}</option>
             </select>
             <br>
-            color:
+            <!-- color:
             <select class="line1-color" @change="setLine1Color">
                 <option v-for="item in encode_options">{{item}}</option>
-            </select>
+            </select> -->
         </div>
 
         <div class="line" v-show="encode_fold">
@@ -68,10 +68,10 @@
                 <option v-for="item in encode_options">{{item}}</option>
             </select>
             <br>
-            color:
+            <!-- color:
             <select class="line2-color" @change="setLine2Color">
                 <option v-for="item in encode_options">{{item}}</option>
-            </select>
+            </select> -->
 
         </div>
     </div>
@@ -103,22 +103,34 @@
     <div class="param">
         <div style="font-weight: bold"> &nbsp &nbsp parameters </div>
         <div style="background: white; padding-left: 6px;">
-            rect-opacity: 
-            <input type="range" class="opacity" id="rect" min="0" max="1"
-                step="0.01" v-model="rect_opacity" @input="changeRectOpacity">
-            <br>
-            line-opacity: 
-            <input type="range" class="opacity" id="line" min="0" max="1"
-                step="0.01" v-model="line_opacity" @input="changeLineOpacity">
+            <fieldset>
+                rect-opacity: 
+                <input type="range" class="opacity" id="rect" min="0" max="1"
+                    step="0.01" v-model="rect_opacity" @input="changeRectOpacity">
+                <br>
+                line-opacity: 
+                <input type="range" class="opacity" id="line" min="0" max="1"
+                    step="0.01" v-model="line_opacity" @input="changeLineOpacity">
+            </fieldset>
 
-            <br>
-            global time:
-            <!--input type="checkbox" class="globalx" @change="changeGlobalX" checked-->
-            <MySwitch @click="changeGlobalX"/>
-            <br>
-            global value:
-            <!--input type="checkbox" class="globaly" @change="changeGlobalY" checked-->
-            <MySwitch @click="changeGlobalY"/>
+            <fieldset>
+                global time:
+                <!--input type="checkbox" class="globalx" @change="changeGlobalX" checked-->
+                <div class="switch"><MySwitch @click="changeGlobalX"/></div>
+                <br>
+                global value:
+                <!--input type="checkbox" class="globaly" @change="changeGlobalY" checked-->
+                <div class="switch"><MySwitch @click="changeGlobalY"/></div>
+            </fieldset>
+
+            <fieldset>
+                top selecting:
+                <div class="switch"><MySwitch  v-model="top_select" @click="changeTopSelect"/></div>
+                <br>
+                top match:
+                <div class="switch"><MySwitch  v-model="top_match" @click="changeTopMatch"/></div>
+            </fieldset>
+          
         </div>
     </div>
     
@@ -194,7 +206,9 @@
 select{
     position: absolute;
     width: 45%;
-    right: 1px;
+    right: 5px;
+    border: 1px black solid;
+    border-radius: 3px;
 }
 
 #pers_val{
@@ -205,7 +219,16 @@ select{
 .opacity{
     position: absolute;
     right: 5px;
-    width: 50%;
+    width: 45%;
+}
+
+fieldset{
+    border: 1px white solid;
+}
+.switch{
+    position: absolute;
+    right: 60px;
+    display: inline-block;
 }
 
 </style>
@@ -215,7 +238,7 @@ import { mapping_relationship, user_parameters } from '../util/parameters'
 import bus from '../util/eventBus'
 import Draggable from 'vuedraggable'
 import MySwitch from './MySwitch.vue'
-import { sort_type, updateOrder } from '../util/sortForVisual'
+import { sort_type, updateOrder, select_first, match_first } from '../util/sortForVisual'
 import { initAllTheHillsData, visualcode_object } from '../util/codeList'
 
 export default{
@@ -230,6 +253,8 @@ export default{
             global_y: true,
             rect_opacity: 0.8,
             line_opacity: 1,
+            top_select: false,
+            top_match: false
             // on_line_order: false,
             // sort_list:sort_type.map((name, index) =>{
             //     return { name, index, ban:false, reverse:false};
@@ -270,8 +295,8 @@ export default{
             mapping_relationship["rect"]["height"] = this.encode_options[0]
             this.rect_pos.value = this.encode_options[2]
             mapping_relationship["rect"]["x"] = this.encode_options[2]
-            this.rect_color.value = this.encode_options[0]
-            mapping_relationship["rect"]["fill"] = this.encode_options[0]
+            // this.rect_color.value = this.encode_options[0]
+            // mapping_relationship["rect"]["fill"] = this.encode_options[0]
             this.line1_width.value = this.encode_options[1]
             mapping_relationship["hline"]["width"] = this.encode_options[1]
             this.line1_y.value = this.line1_y.options[0].value;
@@ -280,14 +305,14 @@ export default{
             mapping_relationship["hline"]["strokeWidth"] = this.encode_options[0]
             this.line1_strokeDash.value = this.encode_options[0]
             mapping_relationship["hline"]["strokeDash"] = this.encode_options[0]
-            this.line1_color.value = this.encode_options[0]
-            mapping_relationship["hline"]["stroke"] = this.encode_options[0]
+            // this.line1_color.value = this.encode_options[0]
+            // mapping_relationship["hline"]["stroke"] = this.encode_options[0]
             this.line2_height.value = this.encode_options[0]
             mapping_relationship["vline"]["height"] = this.encode_options[0]
             this.line2_strokeWidth.value = this.encode_options[0]
             mapping_relationship["vline"]["strokeWidth"] = this.encode_options[0]
-            this.line2_color.value = this.encode_options[0]
-            mapping_relationship["vline"]["stroke"] = this.encode_options[0]
+            // this.line2_color.value = this.encode_options[0]
+            // mapping_relationship["vline"]["stroke"] = this.encode_options[0]
 
             if(flag) this.startUpdateVisualCode();
         },
@@ -357,7 +382,18 @@ export default{
                     visualcode_object[key][i].updateDataYDomain(key);
             }
             bus.emit("updateVisualCode", false);
-        }
+        },
+
+        changeTopSelect(){
+            select_first[0] = this.top_select
+            bus.emit("updateDataOrder", null)
+        },
+
+        changeTopMatch(){
+            match_first[0] = this.top_match
+            bus.emit("updateDataOrder", null)
+        },
+
     },
 
     created(){
@@ -379,15 +415,15 @@ export default{
         this.rect_width = document.querySelector(".rect-width");
         this.rect_height = document.querySelector(".rect-height");
         this.rect_pos = document.querySelector(".rect-pos");
-        this.rect_color = document.querySelector(".rect-color");
+        // this.rect_color = document.querySelector(".rect-color");
         this.line1_width = document.querySelector(".line1-width");
         this.line1_y = document.querySelector(".line1-height");
         this.line1_strokeWidth = document.querySelector(".line1-stroke");
         this.line1_strokeDash = document.querySelector(".line1-strokeDash");
-        this.line1_color = document.querySelector(".line1-color");
+        // this.line1_color = document.querySelector(".line1-color");
         this.line2_height = document.querySelector(".line2-height");
         this.line2_strokeWidth = document.querySelector(".line2-stroke");
-        this.line2_color = document.querySelector(".line2-color");
+        // this.line2_color = document.querySelector(".line2-color");
 
         this.resetEncoding(false);
     }

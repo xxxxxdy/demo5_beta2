@@ -2,12 +2,12 @@
     <div style="background:white; border-radius: 5px; margin-bottom: 5px; padding-top: 5px;"
         @mouseenter="rollingForDetail" @mouseleave="rollingCancel">
         &nbsp &nbsp <b>attribute</b> &nbsp
-        <select style="padding-left:3px" :class="'seletor'+index" @change="changeDataValue">
+        <select style="padding-left:3px; border: 1px black solid; border-radius: 3px;" :class="'seletor'+index" @change="changeDataValue">
             <option v-for="item in data_value_name">{{item}}</option>  
         </select>
         <br>
         <div :style="style_shape" @mouseenter="showAdvanceWindows"></div>
-        <div :style="style_color">&nbsp &nbsp persistent &nbsp {{per_val}}</div>
+        <div :style="style_color">&nbsp &nbsp persistence &nbsp {{per_val}}</div>
         
         <div class="range" style="position: relative; padding-left: 18px; padding-bottom: 30px;" >
             <input type="range" class="persistent" min="0" :max="coarse_max"
@@ -17,17 +17,31 @@
         <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="kill" @click="$emit('delete', index)">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
-        <input type="button" class="reset" value="reset" @click="resetOperation"  :style="style_reset">
-        <input type="button" class="filter" value="filter" @click="filterCodeCell">
-        <input type="button" class="align" value="primary" @click="alignAsBase">
-        <input type="button" class="reorder" value="reorder" @click="reorderVisualCode" @dblclick="showOrderView">   
+       
+        <button class="reset" @click="resetOperation"  :style="style_reset">reset</button>
+        <button class="filter" @click="filterCodeCell">match</button>
+        <button class="align" @click="alignAsBase">
+            primary
+            <svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="svgs" v-show="base_sort || sort_index!==index" :color="sort_index===index?'black':'grey'">
+                <path clip-rule="evenodd" fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z"></path>
+            </svg>
+            <svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="svgs" v-show="!base_sort && sort_index===index">
+                <path d="M18 1.5c2.9 0 5.25 2.35 5.25 5.25v3.75a.75.75 0 01-1.5 0V6.75a3.75 3.75 0 10-7.5 0v3a3 3 0 013 3v6.75a3 3 0 01-3 3H3.75a3 3 0 01-3-3v-6.75a3 3 0 013-3h9v-3c0-2.9 2.35-5.25 5.25-5.25z"></path>
+            </svg>
+        </button>
+        <button class="reorder" @click="reorderVisualCode" @dblclick="showOrderView">reorder
+            <svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="svgs" @click="showOrderView" >
+                <path clip-rule="evenodd" fill-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zM2.25 10.5a8.25 8.25 0 1114.59 5.28l4.69 4.69a.75.75 0 11-1.06 1.06l-4.69-4.69A8.25 8.25 0 012.25 10.5z"></path>
+            </svg>
+        </button>
+        
     </div>
 
     <div class="sort-div" v-show="sort_hover" style="cursor: pointer;">
         <SortWindows @update="updateSortList"/>
     </div>
     
-    <TimeMover ref="timeaxis" :target="index" @time-axis="cutTimeRange"/>
+    <TimeMover ref="timeaxis" :target="index" :type="data_type" @time-axis="cutTimeRange" @fast-time-axis="fastCutTimeRange"/>
 
     <div class="visual-code-canvas" :id="'canvas'+index" @scroll="recordScroll" >
         <div class="on-canvas" style="display:inline-block; margin-left: 2px; position: relative;" @mousedown="startSelectFunction">
@@ -61,7 +75,7 @@
 .my-scroll-bar-float{
     width: 15px;
     right: 0%;
-    opacity: 0.3;
+    opacity: 0.1;
     position: absolute;
     border: 1px black solid;
     border-radius: 5px;
@@ -102,10 +116,10 @@ input[type=range]{
     right: 8%
 }
 
-.align, .filter, .reset,.reorder{
+/* .align, .filter, .reset,.reorder{
     margin-left: 12px;
     margin-bottom: 2px;
-}
+} */
 
 .sort-div{
     position: absolute;
@@ -116,11 +130,31 @@ input[type=range]{
     z-index: 100;
 }
 
+button{
+    border: 1px black solid;
+    border-radius: 3px;
+    position: relative;
+    margin-left: 6px;
+    margin-bottom: 2px;
+}
+
+.align, .reorder{
+    padding-right: 20px;
+}
+
+.svgs{
+    position:absolute;
+    top: 50%;
+    transform:translate(0,-50%);
+    width: 15px;
+    padding-left: 3px;
+}
+
 </style>
 
 <script>
 import { data_lists, visualcode_object, interactive_list, calculateInitPersistent, pers_list, filter_list} from '../util/codeList';
-import { color_for_highlight, PERS_COLOR, pers_index, getRandomColor } from '../util/colorMapping';
+import { color_for_highlight, PERS_COLOR, pers_index, getRandomColor, SCROLL_BAR_SET } from '../util/colorMapping';
 import { re_sort_order, sort_order, updateOrder, getReSortOrder } from '../util/sortForVisual';
 import { CODE_PADDING, CODE_WIDTH, user_parameters } from '../util/parameters';
 import { getMarksForDraw, CodeToString } from '../util/drawDataManager'
@@ -178,6 +212,7 @@ export default{
             upper_id: -1,
             lower_id: -1,
             past_id: -1,
+            firstMove: true,
         };
     },
     computed:{
@@ -188,8 +223,11 @@ export default{
     methods: {
         getColorByMsg(code_msg){
             if(code_msg["filter"].length > 0) return "red"
-            let i = (1-code_msg["value"].hline.length/this.max_hill_num) * 255;
-            return "rgb("+i+","+i+",255)";
+            if(this.max_hill_num<9) return SCROLL_BAR_SET[code_msg["value"].hline.length]
+            let i = Math.floor(code_msg["value"].hline.length/this.max_hill_num*8.9)
+            return SCROLL_BAR_SET[i];
+            // let i = (1-code_msg["value"].hline.length/this.max_hill_num) * 255;
+            // return "rgb("+i+","+i+",255)";
             // let i = code_msg["value"].hline.length/this.max_hill_num * 255;
             // return "rgb("+i+",0,"+(255-i)+")"
         },
@@ -224,7 +262,7 @@ export default{
         /// Interactive data (for codes)
         selectFunction(e){
             let times = Number(new Date());
-            if(times-this.clicktime<300) return; // 0.2s 内
+            if(times-this.clicktime<100) return; // 0.1s 内
             this.is_mousemove = true;
             e = e || window.event;
             let tar = e.target;
@@ -244,7 +282,8 @@ export default{
                     color_for_highlight[codeid] = getRandomColor();
                     interactive_list.push(codeid);
                     bus.emit("clickForLine", codeid);
-                    bus.emit("analysisCode", [codeid, this.index, this.codes_message[re_sort_order[this.sort_index][codeid]]['value']]);
+                    // bus.emit("analysisCode", [codeid, this.index, this.codes_message[re_sort_order[this.sort_index][codeid]]['value']]);
+                    bus.emit("analysisCode", [codeid, true])
                 }
                 return;
             }
@@ -321,24 +360,27 @@ export default{
                 this.upper_id = this.start_select_id;
                 this.lower_id = this.start_select_id;
             }
-            bus.emit("analysisCode", [codeid, this.index, this.codes_message[nows]['value']]);
+            // bus.emit("analysisCode", [codeid, this.index, this.codes_message[nows]['value']]);
+            bus.emit("analysisCode", [codeid, true]);
         },
 
         /// Interactive data (for one code)
         addInteractive(msg){
             interactive_list.push(msg);
             bus.emit("clickForLine", msg);
-            bus.emit("analysisCode", [msg, this.index, this.codes_message[re_sort_order[this.sort_index][msg]]['value']]);
+            // bus.emit("analysisCode", [msg, this.index, this.codes_message[re_sort_order[this.sort_index][msg]]['value']]);
+            bus.emit("analysisCode", [msg, true]);
         },
         removeInteractive(msg, idx=0){
             interactive_list.splice(idx, 1);
 
             bus.emit("clickForLine", msg);
-            if(interactive_list.length > 0){
-                let idx = interactive_list[interactive_list.length-1]
-                bus.emit("analysisCode", [idx, this.index, this.codes_message[re_sort_order[this.sort_index][idx]]['value']]);
-            }  
-            else bus.emit("analysisCode", [-1, -1, {}]);
+            // if(interactive_list.length > 0){
+            //     let idx = interactive_list[0]
+            //     // bus.emit("analysisCode", [idx, this.index, this.codes_message[re_sort_order[this.sort_index][idx]]['value']]);
+            // }  
+            // // else bus.emit("analysisCode", [-1, -1, {}]);
+            bus.emit("analysisCode", [idx, false])
         },
         closeSelectFunction(e){
             if(!this.is_mousemove){
@@ -375,6 +417,8 @@ export default{
         },
         
         reorderVisualCode(){
+            this.cutTimeRange()
+
             updateOrder(this.index, this.data_type, this.sort_msg);
             this.sort_index = this.index;
             let tmp = this.index;
@@ -392,11 +436,14 @@ export default{
 
             if(this.base_sort === true) 
                 bus.emit("alignOrder", [this.sort_index, this.scroll_unit.scrollTop])
+            
+            
         },
 
         alignAsBase(){
-            this.base_sort = true;
-            bus.emit("alignOrder", [this.index, this.scroll_unit.scrollTop])
+            this.base_sort = !this.base_sort;
+            if(this.base_sort) bus.emit("alignOrder", [this.index, this.scroll_unit.scrollTop])
+            else bus.emit("alignOrder", [-1, this.scroll_unit.scrollTop])
         },
 
         resetOperation(){
@@ -408,19 +455,19 @@ export default{
             }
             this.time_x1 = CODE_PADDING
             this.time_x2 = CODE_WIDTH + CODE_PADDING
-            this.$refs.timeaxis.resetData();
+            this.$refs.timeaxis.resetData(this.data_type);
 
             for(let i=0; i<this.codes_message.length; i++)
                 this.codes_message[i]["str"] = CodeToString(this.codes_message[i].value);
 
             // updateOrder(this.index, this.data_type, this.sort_msg);
-            if(this.sort_index !== this.index){
-                this.sort_index = this.index;
-                let tmp = this.sort_index;
-                this.codes_message.sort(function(a, b){
-                    return re_sort_order[tmp][a.idx] - re_sort_order[tmp][b.idx]
-                })
-            }
+            // if(this.sort_index !== this.index){
+            //     this.sort_index = this.index;
+            //     let tmp = this.sort_index;
+            //     this.codes_message.sort(function(a, b){
+            //         return re_sort_order[tmp][a.idx] - re_sort_order[tmp][b.idx]
+            //     })
+            // }
 
             for(let i=0; i<this.codes_message.length; i++){
                 let len = this.codes_message[i].filter.length;
@@ -434,6 +481,58 @@ export default{
             this.style_reset["color"] = "grey";
         },
 
+        fastCutTimeRange(msg){
+            if(this.firstMove){
+                for(let i=0; i<this.codes_message.length; i++){
+                    this.codes_message[i].filter.splice(0, this.codes_message[i].filter.length);
+                }
+                this.firstMove = false;
+            }
+
+            let new_x=CODE_PADDING, new_x2=CODE_PADDING+CODE_WIDTH;
+            if(msg) {
+                new_x = msg[0]+CODE_PADDING; this.time_x1=new_x;
+                new_x2 = msg[1]+CODE_PADDING; this.time_x2 = new_x2;
+            }
+            else {
+                new_x = this.time_x1;
+                new_x2 = this.time_x2;
+            }
+
+            if(!this.is_beta) {
+                if(this.codes_message_beta.length!==this.codes_message.length){
+                    this.codes_message_beta.splice(0, this.codes_message_beta.length, new Array(this.codes_message.length).fill(0));
+                }
+                for(let i=0, j=this.codes_message.length; i<j; i++)
+                    this.codes_message_beta[i] = JSON.parse(JSON.stringify(this.codes_message[i])); 
+                this.is_beta = true;
+            }
+            else{
+                for(let i=this.first_on_screen, j=this.codes_message.length, k=0; i<j && k<this.once_render_num; i++, k++){
+                    this.codes_message[i] = JSON.parse(JSON.stringify(this.codes_message_beta[i]));
+                    this.codes_message[i].show = true;
+                }
+                    
+            }
+
+            let k = CODE_WIDTH / (new_x2-new_x);
+            let b = CODE_PADDING - k * new_x;
+            for(let i=this.first_on_screen, j=this.codes_message.length, p=0; i<j && p<this.once_render_num; i++, p++){
+                let m = this.codes_message[i].value.hline.length;        
+                for(let h=0; h<m; h++){
+                    if(this.codes_message[i].value.hline.x2 < 0) continue;
+                    if(this.codes_message[i].value.hline.x < CODE_WIDTH) continue;
+                    this.codes_message[i].value.hline[h].x = k*this.codes_message[i].value.hline[h].x + b;
+                    this.codes_message[i].value.hline[h].x2 = k*this.codes_message[i].value.hline[h].x2 + b;
+                    this.codes_message[i].value.rect[h].x = k*this.codes_message[i].value.rect[h].x + b;
+                    this.codes_message[i].value.rect[h].width = k*this.codes_message[i].value.rect[h].width;
+                    this.codes_message[i].value.vline[h].x = k*this.codes_message[i].value.vline[h].x + b;
+                }
+            }
+            
+            this.style_reset["color"] = "black";
+        },
+
         cutTimeRange(msg){
             let new_x=CODE_PADDING, new_x2=CODE_PADDING+CODE_WIDTH;
             if(msg) {
@@ -445,16 +544,21 @@ export default{
                 new_x2 = this.time_x2;
             }
             if(!this.is_beta) {
-                this.codes_message_beta.splice(0, this.codes_message_beta.length);
+                // this.codes_message_beta.splice(0, this.codes_message_beta.length);
+                // for(let i=0, j=this.codes_message.length; i<j; i++)
+                //     this.codes_message_beta.push(JSON.parse(JSON.stringify(this.codes_message[i]))); 
+                if(this.codes_message_beta.length!==this.codes_message.length){
+                    this.codes_message_beta.splice(0, this.codes_message_beta.length, new Array(this.codes_message.length).fill(null));
+                }
                 for(let i=0, j=this.codes_message.length; i<j; i++)
-                    this.codes_message_beta.push(JSON.parse(JSON.stringify(this.codes_message[i]))); 
+                    this.codes_message_beta[i] = JSON.parse(JSON.stringify(this.codes_message[i])); 
                 this.is_beta = true;
             }
-            if(this.is_beta){
+            else{
                 for(let i=0, j=this.codes_message.length; i<j; i++)
                     this.codes_message[i] = JSON.parse(JSON.stringify(this.codes_message_beta[i]));
-            } 
-            
+            }
+
             let k = CODE_WIDTH / (new_x2-new_x);
             let b = CODE_PADDING - k * new_x;
             // console.log(this.codes_message[0])
@@ -472,11 +576,10 @@ export default{
             }
             
             for(let i=0; i<this.codes_message.length; i++){
-                this.codes_message[i].filter.splice(0, this.codes_message[i].filter.length);
                 this.codes_message[i]["str"] = CodeToString(this.codes_message[i].value);
             }
-                
-            this.updateScrollForDraw(this.scroll_unit.scrollTop);
+            this.firstMove = true;
+            // this.updateScrollForDraw(this.scroll_unit.scrollTop);
 
             // for(let i=0, j=this.codes_message.length; i<j; i++){
             //     this.$refs.subcode[i].drawImage();
@@ -556,6 +659,7 @@ export default{
                     
                     /// draw function
                     this.codes_message[i].filter.push([iidx*20, slen]);
+                    iidx += (sstr.length-1)
                 }
                 if(flag) filter_list[this.index].push(sort_order[this.sort_index][i]);
                 // if(flag) this.$refs.subcode[i].drawImage();
@@ -577,7 +681,7 @@ export default{
             document.removeEventListener("mousedown", downFunction);
             document.removeEventListener("mousemove", moveFunction);
             document.removeEventListener("mouseup", upFunction);
-
+            this.scroll_unit.style.cursor="default";
             this.is_box_move = false;
             this.realGetCodeRange();
         },
@@ -607,12 +711,14 @@ export default{
         filterCodeCell(){
             this.is_box_move = true;
             let downFunction = this.changeBoxLeftTopForCell;
+            this.scroll_unit.style.cursor="crosshair";
             document.addEventListener("mousedown", downFunction);
         },
 
         /// This function is called while changing the filter
         updateDrawMessage(pers = 0, init = false){
             data_lists[this.index].splice(0, data_lists[this.index].length);
+         
             for(let i=0, len=visualcode_object[this.data_type].length; i<len; i++){
                 data_lists[this.index].push(visualcode_object[this.data_type][i].getDataForOneDraw(pers));
             }
@@ -653,7 +759,8 @@ export default{
                 bus.emit("clickForLine", -1);
                 
                 let idx = interactive_list[interactive_list.length-1]
-                bus.emit("analysisCode", [idx, this.index, this.codes_message[re_sort_order[this.sort_index][idx]]['value']]);
+                // bus.emit("analysisCode", [idx, this.index, this.codes_message[re_sort_order[this.sort_index][idx]]['value']]);
+                bus.emit("analysisCode", [idx, false])
             }
         },
 
@@ -680,7 +787,7 @@ export default{
                     this.per_val -= this.fine_step;
             }
             if(this.per_val < 0) this.per_val = 0;
-            this.per_val = parseFloat(this.per_val.toFixed(12));
+            this.per_val = parseFloat(this.per_val.toFixed(10));
             this.changePersistent()
         },
         rollingForDetail(){
@@ -699,7 +806,7 @@ export default{
             this.updateMappingChannel()
 
             this.is_beta = false
-            this.cutTimeRange()
+            this.fastCutTimeRange()
         },
 
         /// change value attribute
@@ -719,6 +826,8 @@ export default{
 
             pers_list[this.index][0] = this.data_type;
             pers_list[this.index][1] = this.per_val;
+            
+            this.$refs.timeaxis.updateData(this.data_type)
 
             this.updateDrawMessage(this.per_val)
             this.updateMappingChannel()
@@ -736,7 +845,7 @@ export default{
             this.style_float.top = this.float_min+pos+"px";
             let scroll_float = pos/this.float_height*(this.codes_message.length*(this.onecode_height+2));
             this.scroll_unit.scrollTo(0, scroll_float);
-            this.updateScrollForDraw(scroll_float, false);
+            // this.updateScrollForDraw(scroll_float, false);
         },
         clickMoveFilter(e){
             e = e || window.event;
@@ -769,7 +878,7 @@ export default{
             this.style_float.top = this.float_min+pos+"px";
             let scroll_float = pos/this.float_height*(this.codes_message.length*(this.onecode_height+2));
             this.scroll_unit.scrollTo(0, scroll_float);
-            this.updateScrollForDraw(scroll_float, false);
+            // this.updateScrollForDraw(scroll_float, false);
 
         },
         upFliter(e){
@@ -810,7 +919,6 @@ export default{
                     j++;
                 }
             }
-
             if(flag){
                 let pos = scroll_y/(this.codes_message.length*(this.onecode_height+2))*this.float_height;
                 this.style_float.top = this.float_min+pos+"px";
@@ -829,12 +937,12 @@ export default{
         show_name(new_value, old_value){
             /// This number is the value of font size
             this.onecode_height += new_value ? 25: -25;
-            this.updateScrollForDraw(this.scroll_unit.scrollTop);
+            // this.updateScrollForDraw(this.scroll_unit.scrollTop);
         }
     },
 
     created() {
-        bus.on("updateDataset", msg=>{
+        bus.on("updateVisualCode", msg=>{
             this.data_value_name.splice(0, this.data_value_name.length)
             for(let i=0; i<data_value_line.length; i++)
                 this.data_value_name.push(data_type_name[data_value_line[i]])
@@ -844,19 +952,20 @@ export default{
             this.fine_step = data_field["step"][this.data_type] / 50
             this.time_x1 = CODE_PADDING
             this.time_x2 = CODE_WIDTH + CODE_PADDING
-            this.$refs.timeaxis.updateData();
+            this.type_selector.value = data_type_name[this.data_type]
+            this.$refs.timeaxis.updateData(this.data_type);
 
             pers_list[this.index][0] = this.data_type;
             pers_list[this.index][1] = this.per_val;
             
+            this.updateDrawMessage(this.per_val, msg);
+            this.updateMappingChannel();
+
             this.float_include = this.float_num/this.codes_message.length;
+            // console.log(this.float_num,this.codes_message.length,this.float_include, this.float_height,  this.float_height*this.float_include);
             this.style_float.height = String(this.float_include>1?this.float_height: this.float_height*this.float_include)+"px";
 
             this.style_reset.color = "grey";
-        })
-        bus.on("updateVisualCode", msg=>{
-            this.updateDrawMessage(this.per_val, msg);
-            this.updateMappingChannel();
         })
         // bus.on("updateDataOrder", msg=>{
         //     this.sort_msg = msg;
@@ -874,6 +983,21 @@ export default{
         //     if(this.base_sort === true) 
         //         bus.emit("alignOrder", [this.sort_index, this.scroll_unit.scrollTop])
         // })
+
+        bus.on("updateDataOrder", msg=>{
+            if(this.sort_index !== this.index) return;
+            updateOrder(this.index, this.data_type, this.sort_msg);
+            let tmp = this.sort_index;
+            this.codes_message.sort(function(a, b){
+                return re_sort_order[tmp][a.idx] - re_sort_order[tmp][b.idx]
+            })
+            for(let i =this.first_on_screen, j=0; i<this.codes_message.length && j<this.once_render_num; i++, j++){
+                this.codes_message[i].show = true;
+            }
+
+            if(this.base_sort === true) 
+                bus.emit("alignOrder", [this.sort_index, this.scroll_unit.scrollTop])
+        })
         bus.on("changeRectOpacity", msg=>{  
             this.rect_opacity = msg
         })
@@ -897,6 +1021,12 @@ export default{
         })
 
         bus.on("alignOrder", msg=>{
+            if(msg[0]===-2){
+                let y = re_sort_order[this.sort_index][msg[1]]*(this.onecode_height+2);
+                this.scroll_unit.scrollTo(0, y)
+                return
+            }
+
             if(msg[0]===-1) this.sort_index = this.index;
             else this.sort_index = msg[0];
             if(this.sort_index!== this.index) this.base_sort=false;
@@ -908,15 +1038,30 @@ export default{
                 return re_sort_order[tmp][a.idx] - re_sort_order[tmp][b.idx]
             })
             this.scroll_unit.scrollTo(0, msg[1]);
-            this.updateScrollForDraw(this.scroll_unit.scrollTop);
-            this.style_reset["color"] = "black";
+            // this.updateScrollForDraw(this.scroll_unit.scrollTop);
+            // this.style_reset["color"] = "black";
         })
 
         bus.on("synchronizeScroll", msg=>{
             if(msg[0] === this.index) return;
             if(this.sort_index === this.index && this.base_sort === false) return;
             this.scroll_unit.scrollTo(0, msg[1]);
-            this.updateScrollForDraw(msg[1]);
+            // this.updateScrollForDraw(msg[1]);
+        })
+
+        bus.on("updatePersistence", msg=>{
+            if(msg[0]!==pers_list[this.index][2]) return
+            if(msg[2]) {
+                this.cutTimeRange()
+                return
+            }
+            this.per_val = parseFloat(msg[1].toFixed(10))
+            pers_list[this.index][1] = this.per_val
+            this.updateDrawMessage(this.per_val)
+            this.updateMappingChannel()
+
+            this.is_beta = false
+            this.fastCutTimeRange()
         })
 
         /// get value type list, default the first one
@@ -1005,7 +1150,8 @@ export default{
         /// update linechart
         if(interactive_list.length > 0){
             bus.emit("clickForLine", -1)
-            bus.emit("analysisCode", [interactive_list[interactive_list.length-1], -1, {}])
+            // bus.emit("analysisCode", [interactive_list[0], -1, {}])
+            bus.emit("analysisCode", [interactive_list[0], false])
         }
     }
 }

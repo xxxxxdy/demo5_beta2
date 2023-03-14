@@ -38,8 +38,8 @@ export default{
                 "data":{
                     "values":[]
                 },
-
                 "mark":"line",
+                "labels": false,
                 "encoding":{
                     //"x": { "field": "a", "type": "ordinal"},
                     //"x": { "field": "a", "type": "temporal"},
@@ -50,10 +50,10 @@ export default{
                     "y": { "field": "b", "type":"quantitative",
                         "scale":{"domain":[0, 100]}   
                     },
-                    "color": {"field":"c", "type": "nominal", 
+                    "color": {"field":"c", "type": "nominal", "legend":null,
                         "scale": {"range": ["#00ffff", "#7fffd4", "#fedd00"]} },
 
-                    "opacity":{"value": 0.3}
+                    "opacity":{"value": 0.3},
                 }
             },
             data_value_name:[],

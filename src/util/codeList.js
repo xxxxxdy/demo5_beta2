@@ -1,4 +1,4 @@
-import { getDataName, getDataTime, getDataValue, data_value, data_value_line } from './dataManager'
+import { getDataName, getDataTime, getDataValue, data_value, data_value_line, data_field } from './dataManager'
 import { color_for_highlight } from '../util/colorMapping'
 import { CodeData } from './codeManager'
 
@@ -14,7 +14,7 @@ export function calculateInitPersistent(){
 
 export function set1CodeData(name, start_idx, end_idx){
     if(end_idx - start_idx <= 1) {
-        if(name !== "") console.log("data", name, "is too short to draw");
+        if(name !== "") console.log("data", name, "is too short to calculate persistence");
         return;
     }
     /// Assume that the data is sorted from small to large in time dimension
@@ -108,6 +108,31 @@ export function initAllTheHillsData(){
     }
     set1CodeData(name, start_idx, data_value.length);
     // console.log(visualcode_object)
+
+    for(let key in hill_distri){
+        delete hill_distri[key]
+        delete max_hill_distri[key]
+    }
+    let data_step = (data_field["maxs"][1] - data_field["mins"][1])/24;
+    data_field.x_distri = new Array(24).fill(0);
+    data_field.max_distri = 0;
+    let tmp_min = data_field["mins"][1];
+    data_value_line.forEach(j=>{
+        hill_distri[j]=new Array(24).fill(0)
+        max_hill_distri[j]=0
+        visualcode_object[j].forEach(m=>{
+            m.hill_list.forEach(h=>{
+                let t=getDataTime(h.top_idx)
+                let tmp = Math.floor((t-tmp_min)/data_step);
+                if(tmp >= 24) tmp--;
+                hill_distri[j][tmp]++;
+                if(hill_distri[j][tmp]>max_hill_distri[j]) 
+                    max_hill_distri[j] = hill_distri[j][tmp];
+            })
+        })
+    })
+
+    // console.log(hill_distri)
 }
 
 // export function getCodePoints(idx){
@@ -138,4 +163,6 @@ export var pers_list = {};
 export var interactive_list = [];
 
 export var filter_list = {};
-// sexport var code_points = [];
+// export var code_points = [];
+export var hill_distri = {};
+export var max_hill_distri = {};

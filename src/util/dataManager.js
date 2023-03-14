@@ -141,18 +141,31 @@ export function calculateDataField(){
         }
     }
 
-    let data_step = (data_field["maxs"][1] - data_field["mins"][1])/24;
-    data_field.x_distri = new Array(24).fill(0);
-    data_field.max_distri = 0;
+    // let data_step = (data_field["maxs"][1] - data_field["mins"][1])/24;
+    // data_field.x_distri = new Array(24).fill(0);
+    // data_field.max_distri = 0;
 
-    let tmp_min = data_field["mins"][1];
-    for(let i=0; i < data_value.length; i++){
-        let tmp = Math.floor((getDataTime(i)-tmp_min)/data_step);
-        if(tmp >= 24) tmp--;
-        data_field.x_distri[tmp]++;
-        if(data_field.x_distri[tmp]>data_field.max_distri) 
-            data_field.max_distri = data_field.x_distri[tmp];
-    }
+    // let time_dispersed = [];
+    // for(let i=0;i<24;i++) time_dispersed.push([])
 
+    // let tmp_min = data_field["mins"][1];
+    // // let before = Infinity, next = Infinity
+    // for(let i=0; i < data_value.length; i++){
+    //     let tmptime = getDataTime(i);
+    //     let tmp = Math.floor((tmptime-tmp_min)/data_step);
+    //     if(tmp >= 24) tmp--;
+    //     data_field.x_distri[tmp]++;
+    //     if(time_dispersed[tmp].indexOf(tmptime) === -1)
+    //         time_dispersed[tmp].push(tmptime)
+    // }
+  
+    // for(let i=0; i<24; i++){
+    //     // console.log(data_field.x_distri[i], time_dispersed[i].length)
+    //     if(data_field.x_distri[i]=== 0) continue;
+    //     data_field.x_distri[i] /= time_dispersed[i].length; 
+    //     if(data_field.x_distri[i]>data_field.max_distri) 
+    //         data_field.max_distri = data_field.x_distri[i];
+    // }
+ 
     updateFieldValue();
 }

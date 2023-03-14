@@ -11,7 +11,7 @@
         </div>
         <div v-for="it in interactive_name" style="display:inline-block; margin-top: 10px;">
             <input :id="'radio_'+it.idx" class="radio-tree" type="radio">
-            <label :id="'label_'+it.idx" :for="'radio_'+it.idx" :style="{color:isChecked(it.check)}" @click="checkThisOne">{{it.name}}
+            <label :id="'label_'+it.idx" :for="'radio_'+it.idx" :style="{color:getColor(it.idx), backgroundColor:isChecked(it.check)}" @click="checkThisOne">{{it.name}}
                 <svg :id="'svg_'+it.idx" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" @click="deleteThisOne">
                     <path :id="'path_'+it.idx" stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -20,8 +20,7 @@
         <div class="treewindow" :style="style_vis1">
             <!-- <div style="font-weight:bold; padding-left: 25px;padding-top: 18px;font-size: 20px;">{{name}}</div> -->
             <div style="padding-left:25px; padding-top: 20px;">
-                <canvas id="analysis" :width="(canvas_x+2*padding)*3" 
-                :height="(canvas_y+padding+text)" :style="style_var"></canvas>
+                <canvas id="analysis" :width="(canvas_x+2*padding)*3" :height="(canvas_y+padding+text)" :style="style_var" @mousedown="movePersistence"></canvas>
             </div>
         </div>
         <!-- <div class="selectwindow" :style="style_vis2">
@@ -63,7 +62,6 @@ label{
     border-radius: 5px;
     padding: 3px;
     padding-right:25px;
-    background-color:aliceblue;
     box-shadow: 2px 2px 2px #b0e2ff;
     font-weight: bold;
 }
@@ -71,7 +69,7 @@ label{
 svg{
     margin-left: 5px;
     width: 16px;
-    color: blue;
+    color: red;
     position:absolute;
     top: 50%;
     transform:translate(0,-50%);
@@ -155,17 +153,70 @@ export default{
             canvas_x: 810,
             canvas_y: 850, // 810+40
             padding: 90,
-            text: 20,
+            text: 30,
             // list_idx: -1,
             analysis_idx: -1,
-            max_persistent: 10
+            max_persistent: 10,
+            per_points:[]
         };
     },
 
     methods: {
-        isChecked(msg){
-            return msg?'black':'#aaaaff';
+        getColor(msg){
+            return color_for_highlight[msg]
         },
+        isChecked(msg){
+            return msg?'#d0d8df':'#f0f8ff'; // Aliceblue
+        },
+        stopMovePer(){
+            this.is_move = false;
+            let moveFunction = this.movePersistence
+            let upFunction = this.stopMovePer
+            document.removeEventListener("mousemove", moveFunction)
+            document.removeEventListener("mouseup", upFunction)
+
+            bus.emit("updatePersistence", [this.min_color,-1, true])
+        },
+        movePersistence(e){
+            e = e || window.event;
+            let x_val = Math.floor(e.offsetX /290)
+            if(x_val>=this.per_points.length) return
+            let y_val = e.offsetY /320*(this.canvas_y+this.padding+this.text)
+            if(y_val<20 || y_val>this.canvas_y-20) return
+            let min_dis = this.canvas_y
+            
+            for(let key in this.per_points[x_val]){
+                let dis = Math.abs(y_val-this.per_points[x_val][key][0])
+                if(min_dis>dis){
+                    min_dis = dis
+                    if(!this.is_move) this.min_color = this.per_points[x_val][key][1]
+                }
+            }
+            
+            if(min_dis < 20) return
+
+            let type = 0
+            for(let key in pers_list){
+                if(this.min_color === pers_list[key][2]) {
+                    type = pers_list[key][0]
+                    break
+                }
+            }
+            
+            let hills = visualcode_object[type][this.analysis_idx].hill_list;
+            let total_pers = hills[hills.length - 1].end_persistent;
+            bus.emit("updatePersistence", [this.min_color, (y_val-20)/(this.canvas_y-40) *total_pers, false])
+
+            if(!this.is_move){
+                let moveFunction = this.movePersistence
+                let upFunction = this.stopMovePer
+                document.addEventListener("mousemove", moveFunction)
+                document.addEventListener("mouseup", upFunction)
+            }
+            
+            this.is_move = true;
+        },
+
         clearCanvas(){
             this.analysis_idx = -1;
             this.interactive_name.splice(0, this.interactive_name.length);
@@ -326,6 +377,8 @@ export default{
             this.context.fill();
             this.context.strokeStyle = 'rgba(0, 0, 0, 1)'
             this.context.fillStyle = 'rgba(0, 0, 0, 1)'
+
+            this.per_points[pos].push([y_sign, color])
         },
         drawAnalysisTrees() {
             this.context.fillStyle = "#ffffff";
@@ -334,10 +387,12 @@ export default{
             if (this.analysis_idx < 0)
                 return;
             let tree_list = [];
+            this.per_points.splice(0, this.per_points.length)
             for (let key in pers_list) {
                 if (tree_list.indexOf(pers_list[key][0]) === -1) {
                     this.drawAnalysisTree(pers_list[key][0], tree_list.length);
                     tree_list.push(pers_list[key][0]);
+                    this.per_points.push([])
                 }
                 this.drawPersistentLine(pers_list[key][0], pers_list[key][1], pers_list[key][2], tree_list.indexOf(pers_list[key][0]));
             }
@@ -380,6 +435,7 @@ export default{
                     }
                 } 
                 this.drawAnalysisTrees();
+                bus.emit("alignOrder", [-2, idx])
             }
         },
         deleteThisOne(e){
@@ -390,23 +446,35 @@ export default{
     },
     created() {
         bus.on("analysisCode", msg => {
-            this.analysis_idx = msg[0];
+            if(interactive_list.length<=0){
+                this.analysis_idx = -1;
+                this.interactive_name.splice(0, this.interactive_name.length);
+                this.drawAnalysisTrees();
+                return;
+            }
+
+            if(msg[1]) this.analysis_idx = msg[0];
             // if (msg[0] !== -1)
             //     this.name = visualcode_object[data_value_line[0]][msg[0]].name;
             // else
             //     this.name = " ";
-            
+            let one_check = false;
             this.interactive_name.splice(0, this.interactive_name.length);
+            
             for(let i=0, j=interactive_list.length; i<j; i++){
                 let idx = interactive_list[i];
                 let name = visualcode_object[data_value_line[0]][idx].name;
                 let check = false;
                 if(this.analysis_idx == idx){
                     check = true;
+                    one_check = true;
                 }
                 this.interactive_name.push({'idx':idx, 'name':name, 'check':check})
             }
-            
+            if(!one_check) {
+                this.interactive_name[0].check = true;
+                this.analysis_idx = this.interactive_name[0].idx;
+            }
             // this.list_idx = msg[1];
             this.drawAnalysisTrees();
             // this.getSelectInfo(msg[2]);

@@ -1,8 +1,8 @@
 import { visualcode_object ,data_lists, interactive_list, filter_list } from "./codeList"
 
 export const sort_type = [
-    "filter", /// 0
-    "highlight", /// 1
+    // "matching", /// 0
+    // "selecting", /// 1
     "hills number",  /// 2, data_list[i].length
     "data width",  /// 3, newcode_list[i].end-newcode_list[i].start
     "start position", /// 4, newcode_list[i].start
@@ -12,6 +12,9 @@ export const sort_type = [
 
 export var sort_order = {}
 export var re_sort_order = {}
+
+export var select_first = [false];
+export var match_first = [false];
 
 export function getReSortOrder(idx){
     let tmp = new Array(sort_order[idx].length).fill(0);
@@ -34,32 +37,42 @@ export function updateOrder(idx = 0, type = 2, sort_list = null){
     }
 
     function cmp(a, b){
+        if(select_first[0]){
+            let p = interactive_list.indexOf(a)===-1? (interactive_list.indexOf(b)===-1? 0: -1) :
+                    (interactive_list.indexOf(b)===-1? 1: 0);
+            if(p !== 0) return -p;
+        }
+        if(match_first[0]){
+            let p = filter_list[idx].indexOf(a)===-1? (filter_list[idx].indexOf(b)===-1? 0: -1) :
+                    (filter_list[idx].indexOf(b)===-1? 1: 0);
+            if(p !== 0) return -p;
+        }
         for(let i=0; i<sort_list.length; i++){
             if(!sort_list[i].on) continue;
             let tmp; 
             switch(sort_list[i].index){
+                // case 0:
+                //     tmp = filter_list[idx].indexOf(a)===-1? (filter_list[idx].indexOf(b)===-1? 0: -1) :
+                //         (filter_list[idx].indexOf(b)===-1? 1: 0);
+                //     break;
+                // case 1:
+                //     tmp = interactive_list.indexOf(a)===-1? (interactive_list.indexOf(b)===-1? 0: -1) :
+                //         (interactive_list.indexOf(b)===-1? 1: 0);
+                //     break;
                 case 0:
-                    tmp = filter_list[idx].indexOf(a)===-1? (filter_list[idx].indexOf(b)===-1? 0: -1) :
-                        (filter_list[idx].indexOf(b)===-1? 1: 0);
-                    break;
-                case 1:
-                    tmp = interactive_list.indexOf(a)===-1? (interactive_list.indexOf(b)===-1? 0: -1) :
-                        (interactive_list.indexOf(b)===-1? 1: 0);
-                    break;
-                case 2:
                     tmp = data_lists[idx][a].length - data_lists[idx][b].length;
                     break;
-                case 3:
+                case 1:
                     tmp = visualcode_object[type][a].getEndTime()-visualcode_object[type][a].getStartTime() 
                         - visualcode_object[type][b].getEndTime()+visualcode_object[type][b].getStartTime() ;
                     break;
-                case 4:
+                case 2:
                     tmp = visualcode_object[type][a].getStartTime() - visualcode_object[type][b].getStartTime();
                     break;
-                case 5:
+                case 3:
                     tmp = visualcode_object[type][a].max_value - visualcode_object[type][b].max_value;
                     break;
-                case 6:
+                case 4:
                     tmp = visualcode_object[type][a].name > visualcode_object[type][b].name;
                     break;
                 default:

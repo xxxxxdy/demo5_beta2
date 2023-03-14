@@ -25,14 +25,15 @@
 </style>
 
 <script>
-import { data_field } from '../util/dataManager';
+import { hill_distri, max_hill_distri } from '../util/codeList';
 import { CODE_PADDING, CODE_HEIGHT, CODE_WIDTH, SHOW_WIDTH, SHOW_HEIGHT} from '../util/parameters'
 
 export default{
-    emits:['timeAxis'], 
+    emits:['timeAxis', 'fastTimeAxis'], 
 
     props:{
-        target:{ type: [String, Number], default: 0 }
+        target:{ type: [String, Number], default: 0 },
+        type:{type:[String, Number], default:2}
     },
 
     data(){
@@ -46,8 +47,8 @@ export default{
             dragleft: false,
             move_offset: 0,
         
-            nums: data_field.x_distri,
-            maxs: data_field.max_distri,
+            nums: hill_distri[this.type],
+            maxs: max_hill_distri[this.type],
             MouseDownPos: -1,
             leBeforeMove:0,
             riBeforeMove:0,
@@ -63,7 +64,7 @@ export default{
             }
         },
         style_box(){
-            return {position:"absolute", left: "4px", top: "0px", 
+            return {position:"absolute", left: "4px", top: "0px",
                 width: this.style_x_num+"px", height: "100%"}
         },
         style_left_resize_bar(){
@@ -88,9 +89,9 @@ export default{
             this.drawAxis();
         },
 
-        updateData(){
-            this.nums = data_field.x_distri;
-            this.maxs = data_field.max_distri;
+        updateData(data_type){
+            this.nums = hill_distri[data_type];
+            this.maxs = max_hill_distri[data_type];
             this.context.fillStyle = '#ffffff'
             this.context.fillRect(0, 0, this.canvas_x, this.canvas_y)
             this.resetData();
@@ -128,15 +129,16 @@ export default{
             }else if(this.changeBoxState == 1){
                 //set a new box
                 //defalut: nowPos is on the right
-                if(nowPos < this.MouseDownPos){
-                    tmp = this.MouseDownPos
-                    this.MouseDownPos = nowPos
+                let new_left_pos = this.MouseDownPos
+                if(nowPos < new_left_pos){
+                    tmp = new_left_pos
+                    new_left_pos = nowPos
                     nowPos = tmp
                 }
-                if(this.MouseDownPos >= this.nums.length){
-                    this.MouseDownPos = this.nums.length-1
+                if(new_left_pos >= this.nums.length){
+                    new_left_pos = this.nums.length-1
                 }
-                this.box_para.le = this.MouseDownPos
+                this.box_para.le = new_left_pos
                 this.box_para.ri = nowPos + 1
             }else if(this.changeBoxState == 2){
                 //left resize
@@ -152,6 +154,7 @@ export default{
                 this.box_para.ri = nowPos
             }
             this.drawAxis();
+            this.$emit('fastTimeAxis', [this.box_para.le*this.box_para.step, this.box_para.ri*this.box_para.step]);
         },
 
         updateBoxSide(e){
@@ -199,12 +202,15 @@ export default{
             this.context = this.canvas.getContext('2d')
         },
 
-        drawAxis(){     
+        drawAxis(){
+            this.context.fillStyle = '#ffffff'
+            this.context.fillRect(0, 0, this.canvas_x, this.canvas_y)
+
             let start = CODE_PADDING;
             let bottom = CODE_HEIGHT;
             let width = this.box_para.step;
             for(let i=0, j=this.nums.length; i<j; i++){
-                if(i>=this.box_para.le && i<this.box_para.ri)  this.context.fillStyle = 'aqua';
+                if(i>=this.box_para.le && i<this.box_para.ri)  this.context.fillStyle = '#0054b4';
                 else  this.context.fillStyle = 'grey';
                 let height = bottom*this.nums[i]/this.maxs;
                 let top = bottom - height + CODE_PADDING;
@@ -212,6 +218,9 @@ export default{
                 this.context.strokeRect(start, top, width, height);
                 start += width;
             }
+            this.context.strokeStyle = 'orange';
+            this.context.strokeRect(CODE_PADDING + this.box_para.step*this.box_para.le, CODE_PADDING-5, this.box_para.step*(this.box_para.ri-this.box_para.le), CODE_HEIGHT+5);
+            this.context.strokeStyle = 'black';
         }
     },
 

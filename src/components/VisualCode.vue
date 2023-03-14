@@ -157,12 +157,13 @@ export default{
         },
 
         drawFilter(){
-            for(let i=0; i<pers_index.length; i++){
-                if(pers_index[i]===this.target){
-                    this.context.strokeStyle = PERS_COLOR[i];
-                    break;
-                }  
-            }
+            // for(let i=0; i<pers_index.length; i++){
+            //     if(pers_index[i]===this.target){
+            //         this.context.strokeStyle = PERS_COLOR[i];
+            //         break;
+            //     }  
+            // }
+            this.context.strokeStyle = "red";
             this.context.globalAlpha = "0.8";
             for(let i=0; i<this.filter.length; i++)
                 this.context.strokeRect(this.filter[i][0], 0, this.filter[i][1], CODE_HEIGHT+2*CODE_PADDING);
